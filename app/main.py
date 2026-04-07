@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-
-from app.parser import get_odds_superbet, get_odds_sts
+from app.parser import get_all_odds
 from app.model import find_value_bets
 from app.bankroll import calculate_stake
 
@@ -10,22 +9,20 @@ app = FastAPI()
 HTML = """
 <html>
 <head>
-<title>REAL Betting Bot</title>
+<meta http-equiv="refresh" content="30">
+<title>FINAL BOT</title>
+
 <style>
-body { background:#0f172a; color:white; font-family:Arial; text-align:center; }
+body { background:#0f172a; color:white; text-align:center; font-family:Arial; }
 table { margin:auto; border-collapse: collapse; }
 td, th { padding:10px; border:1px solid #333; }
 .green { color:#00ff88; }
-button { padding:10px 20px; margin:20px; }
 </style>
 </head>
 
 <body>
-<h1>💰 REAL VALUE BET BOT</h1>
 
-<form method="get">
-<button type="submit">Skanuj rynek</button>
-</form>
+<h1>🚀 FINAL VALUE BET BOT</h1>
 
 {content}
 
@@ -35,20 +32,18 @@ button { padding:10px 20px; margin:20px; }
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    book_a = get_odds_superbet()
-    book_b = get_odds_sts()
-
-    value_bets = find_value_bets(book_a, book_b)
+    data = get_all_odds()
+    bets = find_value_bets(data)
     stake = calculate_stake(100)
 
-    if not value_bets:
-        content = "<p>Brak value betów</p>"
+    if not bets:
+        content = "<p>Brak okazji</p>"
     else:
         content = f"<h3>Stawka: {stake} zł</h3>"
-        content += "<table><tr><th>Superbet</th><th>STS</th><th>Value</th></tr>"
+        content += "<table><tr><th>Bukmacher</th><th>Kurs</th><th>Value</th></tr>"
 
-        for bet in value_bets:
-            content += f"<tr><td>{bet['book_a']}</td><td>{bet['book_b']}</td><td class='green'>{bet['value']}</td></tr>"
+        for b in bets:
+            content += f"<tr><td>{b['best_book']}</td><td>{b['odd']}</td><td class='green'>{b['value']}</td></tr>"
 
         content += "</table>"
 
