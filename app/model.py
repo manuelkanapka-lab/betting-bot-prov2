@@ -1,27 +1,30 @@
-def find_value_bets(data):
+def find_value_from_manual(data):
+    if len(data) < 2:
+        return []
+
+    match = data[0]["match"]
+
+    best = {"1": 0, "X": 0, "2": 0}
+    source = {"1": "", "X": "", "2": ""}
+
+    for b in data:
+        for k in ["1", "X", "2"]:
+            if b[k] > best[k]:
+                best[k] = b[k]
+                source[k] = b["bookmaker"]
+
     results = []
 
-    sb = data["superbet"]
-    sts = data["sts"]
-    fort = data["fortuna"]
-
-    for i in range(min(len(sb), len(sts), len(fort))):
-        odds = {
-            "superbet": sb[i],
-            "sts": sts[i],
-            "fortuna": fort[i]
-        }
-
-        best_book = max(odds, key=odds.get)
-        best_odd = odds[best_book]
-
-        avg = sum(odds.values()) / 3
-        value = (best_odd / avg) - 1
+    for k in ["1", "X", "2"]:
+        avg = sum(b[k] for b in data) / len(data)
+        value = (best[k] / avg) - 1
 
         if value > 0.03:
             results.append({
-                "best_book": best_book,
-                "odd": best_odd,
+                "match": match,
+                "type": k,
+                "odd": best[k],
+                "book": source[k],
                 "value": round(value, 3)
             })
 
