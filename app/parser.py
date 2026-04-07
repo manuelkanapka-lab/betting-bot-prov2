@@ -1,21 +1,30 @@
-import requests
-from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 def get_odds():
-    url = "https://www.superbet.pl"
-    headers = {"User-Agent": "Mozilla/5.0"}
+    odds = []
 
     try:
-        r = requests.get(url, headers=headers, timeout=5)
-        soup = BeautifulSoup(r.text, "html.parser")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
 
-        odds = []
-        for tag in soup.find_all("span")[:20]:
-            text = tag.text.strip()
-            if text.replace(".", "").isdigit():
-                odds.append(float(text))
+            page.goto("https://www.superbet.pl", timeout=60000)
+            page.wait_for_timeout(5000)
+
+            elements = page.query_selector_all("span")
+
+            for el in elements[:30]:
+                text = el.inner_text().strip()
+                try:
+                    value = float(text)
+                    if 1.2 < value < 10:
+                        odds.append(value)
+                except:
+                    pass
+
+            browser.close()
 
         return odds[:10]
 
     except:
-        return [1.5, 2.0, 2.5]  # fallback
+        return [1.5, 2.0, 2.5]
