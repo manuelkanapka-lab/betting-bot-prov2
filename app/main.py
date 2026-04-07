@@ -1,28 +1,39 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse
-from app.parser import get_all_odds
-from app.model import find_value_bets
-from app.bankroll import calculate_stake
+
+from app.parser import parse_all
+from app.model import find_value_from_manual
 
 app = FastAPI()
 
 HTML = """
 <html>
 <head>
-<meta http-equiv="refresh" content="30">
-<title>FINAL BOT</title>
-
+<title>Betting Bot PRO</title>
 <style>
-body { background:#0f172a; color:white; text-align:center; font-family:Arial; }
+body { background:#0f172a; color:white; font-family:Arial; text-align:center; }
+textarea { width:28%; height:200px; margin:5px; }
+.container { display:flex; justify-content:center; }
 table { margin:auto; border-collapse: collapse; }
 td, th { padding:10px; border:1px solid #333; }
 .green { color:#00ff88; }
+button { padding:10px 20px; margin:20px; }
 </style>
 </head>
 
 <body>
 
-<h1>🚀 FINAL VALUE BET BOT</h1>
+<h1>📊 VALUE BET SCANNER</h1>
+
+<form method="post">
+<div class="container">
+<textarea name="superbet" placeholder="Superbet"></textarea>
+<textarea name="sts" placeholder="STS"></textarea>
+<textarea name="fortuna" placeholder="Fortuna"></textarea>
+</div>
+
+<button type="submit">Analizuj</button>
+</form>
 
 {content}
 
@@ -32,18 +43,25 @@ td, th { padding:10px; border:1px solid #333; }
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    data = get_all_odds()
-    bets = find_value_bets(data)
-    stake = calculate_stake(100)
+    return HTML.replace("{content}", "")
 
-    if not bets:
-        content = "<p>Brak okazji</p>"
+
+@app.post("/", response_class=HTMLResponse)
+def analyze(
+    superbet: str = Form(""),
+    sts: str = Form(""),
+    fortuna: str = Form("")
+):
+    data = parse_all(superbet, sts, fortuna)
+    results = find_value_from_manual(data)
+
+    if not results:
+        content = "<p>Brak value betów</p>"
     else:
-        content = f"<h3>Stawka: {stake} zł</h3>"
-        content += "<table><tr><th>Bukmacher</th><th>Kurs</th><th>Value</th></tr>"
+        content = "<table><tr><th>Mecz</th><th>Typ</th><th>Kurs</th><th>Buk</th><th>Value</th></tr>"
 
-        for b in bets:
-            content += f"<tr><td>{b['best_book']}</td><td>{b['odd']}</td><td class='green'>{b['value']}</td></tr>"
+        for r in results:
+            content += f"<tr><td>{r['match']}</td><td>{r['type']}</td><td>{r['odd']}</td><td>{r['book']}</td><td class='green'>{r['value']}</td></tr>"
 
         content += "</table>"
 
