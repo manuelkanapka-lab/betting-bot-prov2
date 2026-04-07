@@ -1,20 +1,27 @@
-def calculate_value(odd_a, odd_b):
-    return (odd_a / odd_b) - 1
-
-
-def find_value_bets(book_a, book_b):
+def find_value_bets(data):
     results = []
 
-    for i in range(min(len(book_a), len(book_b))):
-        a = book_a[i]
-        b = book_b[i]
+    sb = data["superbet"]
+    sts = data["sts"]
+    fort = data["fortuna"]
 
-        value = calculate_value(a, b)
+    for i in range(min(len(sb), len(sts), len(fort))):
+        odds = {
+            "superbet": sb[i],
+            "sts": sts[i],
+            "fortuna": fort[i]
+        }
+
+        best_book = max(odds, key=odds.get)
+        best_odd = odds[best_book]
+
+        avg = sum(odds.values()) / 3
+        value = (best_odd / avg) - 1
 
         if value > 0.03:
             results.append({
-                "book_a": a,
-                "book_b": b,
+                "best_book": best_book,
+                "odd": best_odd,
                 "value": round(value, 3)
             })
 
