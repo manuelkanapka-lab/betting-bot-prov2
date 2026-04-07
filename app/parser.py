@@ -1,38 +1,49 @@
-from playwright.sync_api import sync_playwright
+import re
 
-def scrape_site(url):
-    odds = []
-
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-
-            page.goto(url, timeout=60000)
-            page.wait_for_timeout(5000)
-
-            elements = page.query_selector_all("span")
-
-            for el in elements[:50]:
-                text = el.inner_text().strip()
-                try:
-                    value = float(text)
-                    if 1.2 < value < 10:
-                        odds.append(value)
-                except:
-                    pass
-
-            browser.close()
-
-        return odds[:10]
-
-    except:
-        return []
+def extract_odds(text):
+    # znajdź wszystkie liczby typu 1.50, 2.75 itd
+    return [float(x) for x in re.findall(r"\d+\.\d+", text)]
 
 
-def get_all_odds():
-    return {
-        "superbet": scrape_site("https://www.superbet.pl"),
-        "sts": scrape_site("https://www.sts.pl"),
-        "fortuna": scrape_site("https://www.efortuna.pl")
-    }
+def extract_teams(text):
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+
+    teams = []
+    for line in lines:
+        if len(line.split()) >= 1 and not re.search(r"\d", line):
+            teams.append(line)
+
+    # bierz pierwsze 2 sensowne linie jako mecz
+    if len(teams) >= 2:
+        return f"{teams[0]} vs {teams[1]}"
+    return "Unknown match"
+
+
+def parse_bookmaker(text, name):
+    odds = extract_odds(text)
+    match = extract_teams(text)
+
+    if len(odds) >= 3:
+        return {
+            "bookmaker": name,
+            "match": match,
+            "1": odds[0],
+            "X": odds[1],
+            "2": odds[2]
+        }
+
+    return None
+
+
+def parse_all(superbet, sts, fortuna):
+    data = []
+
+    sb = parse_bookmaker(superbet, "Superbet")
+    st = parse_bookmaker(sts, "STS")
+    fo = parse_bookmaker(fortuna, "Fortuna")
+
+    for x in [sb, st, fo]:
+        if x:
+            data.append(x)
+
+    return data
