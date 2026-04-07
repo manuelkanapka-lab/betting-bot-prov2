@@ -1,20 +1,21 @@
-def calculate_ev(odds, probability):
-    return (odds * probability) - 1
+def calculate_value(odd_a, odd_b):
+    return (odd_a / odd_b) - 1
 
 
-def find_value_bets(odds_list):
+def find_value_bets(book_a, book_b):
     results = []
 
-    for odds in odds_list:
-        prob = 1 / odds
-        boosted_prob = prob * 1.15  # poprawiony model
-        ev = calculate_ev(odds, boosted_prob)
+    for i in range(min(len(book_a), len(book_b))):
+        a = book_a[i]
+        b = book_b[i]
 
-        if ev > 0:
+        value = calculate_value(a, b)
+
+        if value > 0.03:
             results.append({
-                "odds": odds,
-                "prob": round(boosted_prob, 2),
-                "ev": round(ev, 3)
+                "book_a": a,
+                "book_b": b,
+                "value": round(value, 3)
             })
 
     return results
